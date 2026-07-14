@@ -1,0 +1,38 @@
+# Backend
+fastapi
+uvicorn
+
+# Frontend
+streamlit
+
+# Configuration
+python-dotenv
+
+# Data Processing
+pandas
+numpy
+requests
+beautifulsoup4
+lxml
+pymupdf
+
+# AI / LLM
+openai
+langchain
+langchain-openai
+langchain-community
+
+# Vector Database
+qdrant-client
+
+# Graph Database
+neo4j
+networkx
+
+# Utilities
+tqdm
+pydantic
+python-multipart
+
+# Testing
+pytest
