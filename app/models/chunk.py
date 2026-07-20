@@ -8,10 +8,18 @@ class Chunk(BaseModel):
 
     company: str
 
+    ticker: str
+
     document_type: str
+
+    file_name: str
 
     chunk_index: int
 
     text: str
 
     word_count: int
+
+    character_count: int
+
+    page_count: int
