@@ -36,3 +36,7 @@ python-multipart
 
 # Testing
 pytest
+
+sentence-transformers
+torch
+transformers
