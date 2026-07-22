@@ -1,19 +1,20 @@
 from app.embeddings.embedding_generator import EmbeddingGenerator
 
-
 generator = EmbeddingGenerator()
+
+dimension = generator.get_embedding_dimension()
 
 text = """
 AMD develops high-performance CPUs and GPUs
-for data centers, gaming, and AI workloads.
+for AI workloads.
 """
 
 embedding = generator.generate_embedding(text)
 
 print("=" * 50)
-print("Embedding Generated")
+print("Embedding Generator Test")
 print("=" * 50)
-
-print(f"Vector Dimension : {len(embedding)}")
-
-print(f"First 10 Values  : {embedding[:10]}")
+print(f"Embedding Model     : {generator.model.__class__.__name__}")
+print(f"Embedding Dimension : {dimension}")
+print(f"Vector Length       : {len(embedding)}")
+print(f"First 10 Values     : {embedding[:10]}")
