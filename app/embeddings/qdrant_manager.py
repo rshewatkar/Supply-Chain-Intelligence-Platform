@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
+from qdrant_client.http.models import ( Distance,PointStruct,VectorParams,)
 
 from app.config.settings import settings
 from app.embeddings.embedding_generator import EmbeddingGenerator
+from app.models.chunk import Chunk
+
+from app.utils.helpers import batch_iterator
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -108,4 +111,98 @@ class QdrantManager:
         logger.info(
             "Collection '%s' deleted successfully.",
             self.collection_name,
+        )
+    
+    def upload_chunks(
+        self,
+        chunks: list[Chunk],
+        batch_size: int = 64,
+    ) -> None:
+        """
+        Generate embeddings and upload chunks to Qdrant.
+
+        Parameters
+        ----------
+        chunks : list[Chunk]
+            List of document chunks.
+
+        batch_size : int
+            Number of vectors uploaded in each request.
+        """
+
+        if not chunks:
+            logger.warning("No chunks found to upload.")
+            return
+
+        logger.info(
+            "Uploading %d chunks to Qdrant...",
+            len(chunks),
+        )
+
+        total_uploaded = 0
+
+        for batch in batch_iterator(chunks, batch_size):
+            points = []
+
+            for chunk in batch:
+                vector = self.embedding_generator.generate_embedding(
+                    chunk.text
+                )
+
+                payload = {
+                    "company": chunk.company,
+                    "ticker": chunk.ticker,
+                    "document_type": chunk.document_type,
+                    "file_name": chunk.file_name,
+                    "chunk_index": chunk.chunk_index,
+                    "text": chunk.text,
+                    "word_count": chunk.word_count,
+                    "character_count": chunk.character_count,
+                    "page_count": chunk.page_count,
+                }
+
+                points.append(
+                    PointStruct(
+                        id=chunk.chunk_id,
+                        vector=vector,
+                        payload=payload,
+                    )
+                )
+
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points,
+                wait=True,
+            )
+
+            total_uploaded += len(points)
+
+            logger.info(
+                "Uploaded %d/%d chunks",
+                total_uploaded,
+                len(chunks),
+            )
+
+        logger.info("Upload completed successfully.")
+
+    def count_vectors(self) -> int:
+        """
+        Return the total number of vectors
+        stored in the collection.
+        """
+
+        result = self.client.count(
+            collection_name=self.collection_name,
+            exact=True,
+        )
+
+        return result.count
+
+    def collection_info(self):
+        """
+        Return collection information.
+        """
+
+        return self.client.get_collection(
+            self.collection_name
         )

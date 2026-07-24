@@ -4,4 +4,12 @@ manager = QdrantManager()
 
 manager.create_collection()
 
-print("Collection Exists:", manager.collection_exists())
+print()
+
+print("Collection Exists :", manager.collection_exists())
+
+print("Vector Count      :", manager.count_vectors())
+
+print()
+
+print(manager.collection_info())
