@@ -1,20 +1,15 @@
-from app.embeddings.embedding_generator import EmbeddingGenerator
+from app.embeddings.embedding_pipeline import EmbeddingPipeline
 
-generator = EmbeddingGenerator()
+pipeline = EmbeddingPipeline(
+    "data/processed/processed_documents.json"
+)
 
-dimension = generator.get_embedding_dimension()
+chunks = pipeline.run()
 
-text = """
-AMD develops high-performance CPUs and GPUs
-for AI workloads.
-"""
-
-embedding = generator.generate_embedding(text)
+print()
 
 print("=" * 50)
-print("Embedding Generator Test")
-print("=" * 50)
-print(f"Embedding Model     : {generator.model.__class__.__name__}")
-print(f"Embedding Dimension : {dimension}")
-print(f"Vector Length       : {len(embedding)}")
-print(f"First 10 Values     : {embedding[:10]}")
+
+print("Embedding Pipeline Completed")
+
+print(f"Chunks Uploaded : {len(chunks)}")

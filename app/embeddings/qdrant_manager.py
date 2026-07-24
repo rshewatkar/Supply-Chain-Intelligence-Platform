@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import NAMESPACE_URL, uuid5
+
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import ( Distance,PointStruct,VectorParams,)
 
@@ -163,7 +165,7 @@ class QdrantManager:
 
                 points.append(
                     PointStruct(
-                        id=chunk.chunk_id,
+                        id=uuid5(NAMESPACE_URL, chunk.chunk_id),
                         vector=vector,
                         payload=payload,
                     )
