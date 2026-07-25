@@ -2,6 +2,7 @@ from app.embeddings.qdrant_manager import QdrantManager
 
 manager = QdrantManager()
 
+#manager.delete_collection()
 manager.create_collection()
 
 print()

@@ -2,6 +2,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.models.chunk import Chunk
 from app.models.processed_document import ProcessedDocument
+from app.utils.helpers import generate_uuid
 
 
 class Chunker:
@@ -31,7 +32,7 @@ class Chunker:
 
             chunks.append(
                 Chunk(
-                    chunk_id=f"{document.ticker}_{index + 1:04}",
+                    chunk_id=generate_uuid(),
                     company=document.company,
                     ticker=document.ticker,
                     document_type=document.document_type,
