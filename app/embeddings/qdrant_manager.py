@@ -208,3 +208,25 @@ class QdrantManager:
         return self.client.get_collection(
             self.collection_name
         )
+    
+    def search(
+        self,
+        query: str,
+        limit: int = 5,
+    ):
+        """
+        Perform semantic search.
+        """
+    
+        query_vector = (
+            self.embedding_generator.generate_embedding(query)
+        )
+    
+        results = self.client.query_points(
+            collection_name=self.collection_name,
+            query=query_vector,
+            limit=limit,
+            with_payload=True,
+        )
+
+        return results.points
