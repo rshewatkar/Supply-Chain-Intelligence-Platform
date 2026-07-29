@@ -77,6 +77,7 @@ CUSTOMERS = set()
 
 PRODUCTS = {
     "EPYC",
+    "iPhone",
     "GeForce",
     "H100",
     "Instinct",

@@ -1,70 +1,58 @@
 from pathlib import Path
-
-import pandas as pd
+import csv
 
 from app.extraction.entity_extractor import EntityExtractor
+from app.extraction.relationship_extractor import RelationshipExtractor
 from app.models.entity import Entity
+from app.models.relationship import Relationship
 from app.models.processed_document import ProcessedDocument
-from app.utils.file_utils import (
-    load_json,
-    save_json,
-)
+from app.utils.file_utils import load_json, save_json
 from app.utils.logger import get_logger
+
 
 logger = get_logger(__name__)
 
 
 class ExtractionPipeline:
     """
-    Entity extraction pipeline.
-
-    Loads processed documents, extracts entities,
-    and exports them to JSON and CSV.
+    End-to-end entity and relationship extraction pipeline.
     """
 
-    def __init__(
-        self,
-        processed_documents_path: str = (
+    def __init__(self):
+
+        self.input_file = Path(
             "data/processed/processed_documents.json"
-        ),
-        output_directory: str = (
+        )
+
+        self.output_directory = Path(
             "data/processed"
-        ),
-    ):
-
-        self.processed_documents_path = (
-            Path(processed_documents_path)
         )
 
-        self.output_directory = (
-            Path(output_directory)
+        self.entity_extractor = EntityExtractor()
+
+        self.relationship_extractor = (
+            RelationshipExtractor()
         )
 
-        self.output_directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        self.extractor = EntityExtractor()
+    # =====================================================
+    # Load Documents
+    # =====================================================
 
     def load_documents(
         self,
     ) -> list[ProcessedDocument]:
-        """
-        Load processed documents.
-        """
 
         logger.info(
             "Loading processed documents..."
         )
 
         data = load_json(
-            self.processed_documents_path
+            self.input_file
         )
 
         documents = [
-            ProcessedDocument(**document)
-            for document in data
+            ProcessedDocument(**item)
+            for item in data
         ]
 
         logger.info(
@@ -73,13 +61,14 @@ class ExtractionPipeline:
 
         return documents
 
+    # =====================================================
+    # Entity Extraction
+    # =====================================================
+
     def extract_entities(
         self,
         documents: list[ProcessedDocument],
     ) -> list[Entity]:
-        """
-        Extract entities from all documents.
-        """
 
         logger.info(
             "Extracting entities..."
@@ -89,12 +78,10 @@ class ExtractionPipeline:
 
         for document in documents:
 
-            document_entities = (
-                self.extractor.extract(document)
-            )
-
             entities.extend(
-                document_entities
+                self.entity_extractor.extract(
+                    document
+                )
             )
 
         logger.info(
@@ -103,55 +90,165 @@ class ExtractionPipeline:
 
         return entities
 
+    # =====================================================
+    # Relationship Extraction
+    # =====================================================
+
+    def extract_relationships(
+        self,
+        documents: list[ProcessedDocument],
+    ) -> list[Relationship]:
+
+        logger.info(
+            "Extracting relationships..."
+        )
+
+        relationships = []
+
+        for document in documents:
+
+            entities = self.entity_extractor.extract(
+                document
+            )
+
+            relationships.extend(
+                self.relationship_extractor.extract(
+                    document=document,
+                    entities=entities,
+                )
+            )
+
+        logger.info(
+            f"Extracted {len(relationships)} relationships."
+        )
+
+        return relationships
+
+    # =====================================================
+    # Save Entities
+    # =====================================================
+
     def save_entities(
         self,
         entities: list[Entity],
-    ) -> None:
-        """
-        Save entities to JSON and CSV.
-        """
+    ):
 
         json_path = (
-            self.output_directory
-            / "entities.json"
+            self.output_directory /
+            "entities.json"
         )
 
         csv_path = (
-            self.output_directory
-            / "entities.csv"
+            self.output_directory /
+            "entities.csv"
         )
-
-        entity_dicts = [
-            entity.model_dump()
-            for entity in entities
-        ]
 
         save_json(
-            entity_dicts,
+            [entity.model_dump() for entity in entities],
             json_path,
-        )
-
-        pd.DataFrame(
-            entity_dicts
-        ).to_csv(
-            csv_path,
-            index=False,
         )
 
         logger.info(
             f"Entities saved to {json_path}"
         )
 
+        with open(
+            csv_path,
+            "w",
+            newline="",
+            encoding="utf-8",
+        ) as file:
+
+            if not entities:
+                logger.warning(
+                    "No entities to save to CSV."
+                )
+                return
+            writer = csv.DictWriter(
+                file,
+                fieldnames=entities[0].model_dump().keys(),
+            )
+
+            writer.writeheader()
+
+            for entity in entities:
+                writer.writerow(
+                    entity.model_dump()
+                )
+
         logger.info(
             f"Entities saved to {csv_path}"
         )
 
+    # =====================================================
+    # Save Relationships
+    # =====================================================
+
+    def save_relationships(
+        self,
+        relationships: list[Relationship],
+    ):
+
+        json_path = (
+            self.output_directory /
+            "relationships.json"
+        )
+
+        csv_path = (
+            self.output_directory /
+            "relationships.csv"
+        )
+
+        save_json(
+            [
+                relationship.model_dump()
+                for relationship in relationships
+            ],
+            json_path,
+        )
+
+        logger.info(
+            f"Relationships saved to {json_path}"
+        )
+
+        with open(
+            csv_path,
+            "w",
+            newline="",
+            encoding="utf-8",
+        ) as file:
+
+            if not relationships:
+                logger.warning(
+                    "No relationships to save to CSV."
+                )
+                return
+            writer = csv.DictWriter(
+                file,
+                fieldnames=relationships[0].model_dump().keys(),
+            )
+
+            writer.writeheader()
+
+            for relationship in relationships:
+                writer.writerow(
+                    relationship.model_dump()
+                )
+
+        logger.info(
+            f"Relationships saved to {csv_path}"
+        )
+
+    # =====================================================
+    # Run Pipeline
+    # =====================================================
+
     def run(
         self,
-    ) -> list[Entity]:
-        """
-        Execute the entity extraction pipeline.
-        """
+    ) -> tuple[
+        list[Entity],
+        list[Relationship],
+    ]:
 
         documents = self.load_documents()
 
@@ -159,12 +256,25 @@ class ExtractionPipeline:
             documents
         )
 
+        relationships = (
+            self.extract_relationships(
+                documents
+            )
+        )
+
         self.save_entities(
             entities
         )
 
-        logger.info(
-            "Entity extraction completed successfully."
+        self.save_relationships(
+            relationships
         )
 
-        return entities
+        logger.info(
+            "Extraction pipeline completed successfully."
+        )
+
+        return (
+            entities,
+            relationships,
+        )
