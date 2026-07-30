@@ -1,0 +1,206 @@
+from neo4j import GraphDatabase
+from neo4j.exceptions import Neo4jError
+
+from app.config.settings import settings
+from app.utils.logger import get_logger
+
+
+logger = get_logger(__name__)
+
+
+class Neo4jManager:
+    """
+    Neo4j database manager.
+
+    Handles:
+    - Database connection
+    - Connectivity verification
+    - Constraint creation
+    - Cypher query execution
+    - Node creation
+    - Relationship creation
+    """
+
+    def __init__(self):
+        """
+        Initialize Neo4j driver.
+        """
+
+        self.driver = GraphDatabase.driver(
+            settings.neo4j_uri,
+            auth=(
+                settings.neo4j_username,
+                settings.neo4j_password,
+            ),
+        )
+
+    # ==========================================================
+    # Connection
+    # ==========================================================
+
+    def verify_connection(self) -> bool:
+        """
+        Verify database connectivity.
+
+        Returns
+        -------
+        bool
+        """
+
+        try:
+            self.driver.verify_connectivity()
+
+            logger.info(
+                "Connected to Neo4j successfully."
+            )
+
+            return True
+
+        except Exception as error:
+
+            logger.error(error)
+
+            return False
+
+    def close(self):
+        """
+        Close Neo4j connection.
+        """
+
+        self.driver.close()
+
+        logger.info("Neo4j connection closed.")
+
+    # ==========================================================
+    # Cypher Execution
+    # ==========================================================
+
+    def execute_query(
+        self,
+        query: str,
+        parameters: dict | None = None,
+    ):
+        """
+        Execute a Cypher query.
+
+        Parameters
+        ----------
+        query : str
+
+        parameters : dict
+
+        Returns
+        -------
+        list
+        """
+
+        try:
+
+            with self.driver.session() as session:
+
+                result = session.run(
+                    query,
+                    parameters or {},
+                )
+
+                return list(result)
+
+        except Neo4jError as error:
+
+            logger.error(error)
+
+            raise
+
+    # ==========================================================
+    # Constraints
+    # ==========================================================
+
+    def create_constraints(self):
+        """
+        Create uniqueness constraints.
+        """
+
+        queries = [
+
+            """
+            CREATE CONSTRAINT entity_id_unique
+            IF NOT EXISTS
+
+            FOR (e:Entity)
+
+            REQUIRE e.entity_id IS UNIQUE
+            """,
+
+            """
+            CREATE CONSTRAINT relationship_id_unique
+            IF NOT EXISTS
+
+            FOR ()-[r:RELATED_TO]-()
+
+            REQUIRE r.relationship_id IS UNIQUE
+            """,
+
+        ]
+
+        for query in queries:
+
+            self.execute_query(query)
+
+        logger.info(
+            "Neo4j constraints created."
+        )
+
+    # ==========================================================
+    # Statistics
+    # ==========================================================
+
+    def count_nodes(self) -> int:
+        """
+        Return total nodes.
+        """
+
+        query = """
+        MATCH (n)
+
+        RETURN count(n) AS total
+        """
+
+        result = self.execute_query(query)
+
+        return result[0]["total"]
+
+    def count_relationships(self) -> int:
+        """
+        Return total relationships.
+        """
+
+        query = """
+        MATCH ()-[r]->()
+
+        RETURN count(r) AS total
+        """
+
+        result = self.execute_query(query)
+
+        return result[0]["total"]
+
+    # ==========================================================
+    # Graph Maintenance
+    # ==========================================================
+
+    def clear_graph(self):
+        """
+        Delete entire graph.
+        """
+
+        self.execute_query(
+            """
+            MATCH (n)
+
+            DETACH DELETE n
+            """
+        )
+
+        logger.info(
+            "Graph cleared successfully."
+        )

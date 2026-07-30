@@ -67,7 +67,7 @@ class Settings(BaseSettings):
 
     neo4j_username: str = "neo4j"
 
-    neo4j_password: str = "password"
+    neo4j_password: str = "SupplyChain@123"
 
     # ==========================================
     # FastAPI
