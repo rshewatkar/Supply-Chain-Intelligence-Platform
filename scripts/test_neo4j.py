@@ -1,6 +1,10 @@
 from app.graph.neo4j_manager import Neo4jManager
 print(Neo4jManager)
+from app.config.settings import settings
 
+print(settings.neo4j_uri)
+print(settings.neo4j_username)
+print(settings.neo4j_password)
 
 def main():
     """

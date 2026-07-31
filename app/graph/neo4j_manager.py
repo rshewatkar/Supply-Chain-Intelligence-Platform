@@ -204,3 +204,88 @@ class Neo4jManager:
         logger.info(
             "Graph cleared successfully."
         )
+        
+    def create_entity_nodes(
+        self,
+        entities,
+    ):    
+        """
+        Create Entity nodes in Neo4j.
+        """
+    
+        query = """
+        MERGE (e:Entity {
+            entity_id: $entity_id
+        })
+    
+        SET
+            e.name = $name,
+            e.entity_type = $entity_type,
+            e.company = $company,
+            e.ticker = $ticker,
+            e.source_document = $source_document,
+            e.file_name = $file_name,
+            e.confidence = $confidence,
+            e.occurrence_count = $occurrence_count
+        """
+    
+        with self.driver.session() as session:
+    
+            for entity in entities:
+    
+                session.run(
+                    query,
+                    entity.model_dump(),
+                )
+    
+        logger.info(
+            "Imported %s entity nodes.",
+            len(entities),
+        )
+    
+    def create_relationships(
+        self,
+        relationships,
+    ):
+        """
+        Create relationships between Entity nodes.
+        """
+    
+        query = """
+        MATCH (source:Entity {
+            entity_id: $source_entity_id
+        })
+    
+        MATCH (target:Entity {
+            entity_id: $target_entity_id
+        })
+    
+        MERGE (source)-[r:RELATED_TO {
+            relationship_id: $relationship_id
+        }]->(target)
+    
+        SET
+            r.relationship_type = $relationship_type,
+            r.company = $company,
+            r.ticker = $ticker,
+            r.source_document = $source_document,
+            r.file_name = $file_name,
+            r.confidence = $confidence,
+            r.occurrence_count = $occurrence_count
+        """
+    
+        with self.driver.session() as session:
+    
+            for relationship in relationships:
+    
+                session.run(
+                    query,
+                    relationship.model_dump(),
+                )
+    
+        logger.info(
+            "Imported %s relationships.",
+            len(relationships),
+        )
+    
+    

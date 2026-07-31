@@ -97,33 +97,63 @@ class ExtractionPipeline:
     def extract_relationships(
         self,
         documents: list[ProcessedDocument],
+        entities: list[Entity],
     ) -> list[Relationship]:
-
+        """
+        Extract relationships using the already extracted
+        Entity objects to preserve entity IDs.
+        """
+    
         logger.info(
             "Extracting relationships..."
         )
-
+    
         relationships = []
-
+    
+        # -------------------------------------------------
+        # Group entities by document
+        # -------------------------------------------------
+    
+        entities_by_document = {}
+    
+        for entity in entities:
+    
+            key = entity.file_name
+    
+            entities_by_document.setdefault(
+                key,
+                [],
+            ).append(entity)
+    
+        # -------------------------------------------------
+        # Extract relationships
+        # -------------------------------------------------
+    
         for document in documents:
-
-            entities = self.entity_extractor.extract(
-                document
+    
+            document_entities = entities_by_document.get(
+                document.file_name,
+                [],
             )
-
+    
             relationships.extend(
                 self.relationship_extractor.extract(
                     document=document,
-                    entities=entities,
+                    entities=document_entities,
                 )
             )
-
+    
         logger.info(
-            f"Extracted {len(relationships)} relationships."
+            "Extracted %s relationships.",
+            len(relationships),
         )
-
-        return relationships
-
+    
+        return relationships                
+            
+    
+                                                                                                        
+                
+    
     # =====================================================
     # Save Entities
     # =====================================================
@@ -258,7 +288,8 @@ class ExtractionPipeline:
 
         relationships = (
             self.extract_relationships(
-                documents
+                documents,
+                entities,
             )
         )
 

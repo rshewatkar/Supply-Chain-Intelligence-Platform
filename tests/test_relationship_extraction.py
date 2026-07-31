@@ -77,9 +77,9 @@ def test_relationship_extraction():
 
         assert relationship.relationship_id != ""
 
-        assert relationship.source_entity != ""
+        assert relationship.source_entity_name != ""
 
-        assert relationship.target_entity != ""
+        assert relationship.target_entity_name != ""
 
         assert relationship.relationship_type != ""
 
@@ -97,9 +97,9 @@ def test_relationship_extraction():
 
     keys = [
         (
-            relationship.source_entity,
+            relationship.source_entity_id,
             relationship.relationship_type,
-            relationship.target_entity,
+            relationship.target_entity_id,
         )
         for relationship in relationships
     ]
