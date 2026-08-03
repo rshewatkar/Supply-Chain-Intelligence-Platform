@@ -44,7 +44,7 @@ class RelationshipExtractor:
         list[Relationship]
         """
 
-        relationships = []
+        relationship_map = {}
 
         seen = set()
 
@@ -130,38 +130,54 @@ class RelationshipExtractor:
 
                         seen.add(key)        
         
-                        relationships.append(
-                            Relationship(
+                        relationship_key = (
+                            source.entity_id,
+                            target.entity_id,
+                            relationship_type,
+                        )
+                        
+                        if relationship_key not in relationship_map:
+                        
+                            relationship_map[relationship_key] = Relationship(
+                        
                                 relationship_id=generate_uuid(),
-                                
+                        
                                 source_entity_id=source.entity_id,
                                 source_entity_name=source.name,
                                 source_entity_type=source.entity_type,
-                                
+                        
                                 target_entity_id=target.entity_id,
                                 target_entity_name=target.name,
                                 target_entity_type=target.entity_type,
-                                
+                        
                                 relationship_type=relationship_type,
-                                
+                        
                                 company=document.company,
                                 ticker=document.ticker,
+                        
                                 source_document=document.document_type,
                                 file_name=document.file_name,
-                                
+                        
                                 confidence=1.0,
-                                occurrence_count=sum(
-                                    occurrences.values()
-                                ),
+                                occurrence_count=0,
                             )
+                        
+                        relationship_map[
+                            relationship_key
+                        ].occurrence_count += sum(
+                            occurrences.values()
                         )
-
+                        
+        relationships = list(
+            relationship_map.values()
+        )
+        
         relationships.sort(
-            key=lambda relationship: (
-                relationship.source_entity_name,
-                relationship.relationship_type,
-                relationship.target_entity_name,
+            key=lambda r: (
+                r.source_entity_name,
+                r.relationship_type,
+                r.target_entity_name,
             )
         )
-
-        return relationships   
+        
+        return relationships            

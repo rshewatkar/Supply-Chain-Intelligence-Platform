@@ -3,6 +3,8 @@ import csv
 
 from app.extraction.entity_extractor import EntityExtractor
 from app.extraction.relationship_extractor import RelationshipExtractor
+from app.extraction.entity_resolver import EntityResolver
+
 from app.models.entity import Entity
 from app.models.relationship import Relationship
 from app.models.processed_document import ProcessedDocument
@@ -29,6 +31,8 @@ class ExtractionPipeline:
         )
 
         self.entity_extractor = EntityExtractor()
+        
+        self.entity_resolver = EntityResolver()
 
         self.relationship_extractor = (
             RelationshipExtractor()
@@ -282,23 +286,26 @@ class ExtractionPipeline:
 
         documents = self.load_documents()
 
-        entities = self.extract_entities(
-            documents
+        entities = self.extract_entities(documents)
+
+        relationships = self.extract_relationships(
+            documents,
+            entities,
         )
 
-        relationships = (
-            self.extract_relationships(
-                documents,
+        resolved_entities, updated_relationships = (
+            self.entity_resolver.resolve(
                 entities,
+                relationships,
             )
         )
 
         self.save_entities(
-            entities
+            resolved_entities
         )
 
         self.save_relationships(
-            relationships
+            updated_relationships
         )
 
         logger.info(
@@ -306,6 +313,6 @@ class ExtractionPipeline:
         )
 
         return (
-            entities,
-            relationships,
+            resolved_entities,
+            updated_relationships,
         )

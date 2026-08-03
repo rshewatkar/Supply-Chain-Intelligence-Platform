@@ -64,6 +64,27 @@ def test_relationship_extraction():
 
     assert len(relationships) > 0
 
+    assert relationships[0].source_entity_id is not None
+
+    assert relationships[0].target_entity_id is not None
+
+    entity_ids = {
+        entity.entity_id
+        for entity in entities
+    }
+
+    for relationship in relationships:
+
+        assert (
+            relationship.source_entity_id
+            in entity_ids
+        )
+
+        assert (
+            relationship.target_entity_id
+            in entity_ids
+        )
+
     # ------------------------------------------
     # Relationship object assertions
     # ------------------------------------------

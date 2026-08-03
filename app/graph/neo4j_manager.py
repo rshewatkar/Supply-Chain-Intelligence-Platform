@@ -261,11 +261,13 @@ class Neo4jManager:
         })
     
         MERGE (source)-[r:RELATED_TO {
-            relationship_id: $relationship_id
-        }]->(target)
+            source_entity_id:$source_entity_id,
+            target_entity_id:$target_entity_id,
+            relationship_type:$relationship_type
+        }]->(target)     
     
         SET
-            r.relationship_type = $relationship_type,
+            r.relationship_id = $relationship_id,
             r.company = $company,
             r.ticker = $ticker,
             r.source_document = $source_document,
