@@ -2,107 +2,122 @@ from app.graph.graph_analytics import GraphAnalytics
 
 
 def print_separator():
-
-    print("=" * 70)
-
-
-def print_table(title, rows, score_column):
-
-    print()
-    print(title)
-    print("-" * 70)
-
-    print(
-        f"{'Rank':<6}"
-        f"{'Entity':<30}"
-        f"{'Type':<20}"
-        f"{score_column.capitalize():>12}"
-    )
-
-    print("-" * 70)
-
-    for index, row in enumerate(rows, start=1):
-
-        print(
-            f"{index:<6}"
-            f"{row['name']:<30}"
-            f"{row['type']:<20}"
-            f"{row[score_column]:>12.4f}"
-        )
+    print("=" * 60)
 
 
 def main():
 
     analytics = GraphAnalytics()
 
-    print_separator()
-    print("Supply Chain Intelligence Platform")
-    print("Graph Analytics")
-    print_separator()
-
     try:
 
-        if not analytics.neo4j.verify_connection():
+        print_separator()
+        print("Supply Chain Intelligence Platform")
+        print("Graph Analytics")
+        print_separator()
 
-            print("\nUnable to connect to Neo4j.")
-            return
-
-        # ---------------------------------------
-        # Projection
-        # ---------------------------------------
+        # -------------------------------------------------
+        # Create Projection
+        # -------------------------------------------------
 
         analytics.create_projection()
 
-        # ---------------------------------------
-        # Degree
-        # ---------------------------------------
+        # -------------------------------------------------
+        # Run Algorithms
+        # -------------------------------------------------
 
         analytics.degree_centrality()
 
-        # ---------------------------------------
-        # Betweenness
-        # ---------------------------------------
-
         analytics.betweenness_centrality()
 
-        # ---------------------------------------
-        # Results
-        # ---------------------------------------
+        analytics.closeness_centrality()
 
-        degree = analytics.top_degree_nodes()
+        analytics.louvain_communities()
 
-        betweenness = analytics.top_betweenness_nodes()
+        # -------------------------------------------------
+        # Degree Centrality
+        # -------------------------------------------------
 
-        print_table(
-            "Top Degree Centrality",
-            degree,
-            "degree",
-        )
+        print("\nTop Degree Nodes")
+        print("-" * 60)
 
-        print()
+        for node in analytics.top_degree_nodes():
 
-        print_table(
-            "Top Betweenness Centrality",
-            betweenness,
-            "betweenness",
-        )
+            print(
+                f"{node['name']:<30}"
+                f"{node['type']:<20}"
+                f"{node['degree']}"
+            )
 
-        # ---------------------------------------
+        # -------------------------------------------------
+        # Betweenness Centrality
+        # -------------------------------------------------
+
+        print("\nTop Betweenness Nodes")
+        print("-" * 60)
+
+        for node in analytics.top_betweenness_nodes():
+
+            print(
+                f"{node['name']:<30}"
+                f"{node['type']:<20}"
+                f"{node['betweenness']:.4f}"
+            )
+
+        # -------------------------------------------------
+        # Closeness Centrality
+        # -------------------------------------------------
+
+        print("\nTop Closeness Nodes")
+        print("-" * 60)
+
+        for node in analytics.top_closeness_nodes():
+
+            print(
+                f"{node['name']:<30}"
+                f"{node['type']:<20}"
+                f"{node['closeness']:.4f}"
+            )
+
+        # -------------------------------------------------
+        # Communities
+        # -------------------------------------------------
+
+        print("\nDetected Communities")
+        print("-" * 60)
+
+        for community in analytics.largest_communities():
+
+            print(
+                f"Community {community['community']:<5}"
+                f"Nodes : {community['nodes']}"
+            )
+
+        # -------------------------------------------------
         # Cleanup
-        # ---------------------------------------
+        # -------------------------------------------------
 
         analytics.drop_projection()
 
-        print()
+        analytics.close()
+
         print_separator()
         print("Graph Analytics Completed Successfully")
         print_separator()
 
-    finally:
+    except Exception as error:
 
-        analytics.close()
+        print_separator()
+        print("Graph Analytics Failed")
+        print_separator()
+
+        print(f"\nError: {error}")
+
+        try:
+            analytics.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
-
-    main()
+        main()
