@@ -247,44 +247,47 @@ class Neo4jManager:
         self,
         relationships,
     ):
-        """
-        Create relationships between Entity nodes.
-        """
-    
-        query = """
-        MATCH (source:Entity {
-            entity_id: $source_entity_id
-        })
-    
-        MATCH (target:Entity {
-            entity_id: $target_entity_id
-        })
-    
-        MERGE (source)-[r:RELATED_TO {
-            source_entity_id:$source_entity_id,
-            target_entity_id:$target_entity_id,
-            relationship_type:$relationship_type
-        }]->(target)     
-    
-        SET
-            r.relationship_id = $relationship_id,
-            r.company = $company,
-            r.ticker = $ticker,
-            r.source_document = $source_document,
-            r.file_name = $file_name,
-            r.confidence = $confidence,
-            r.occurrence_count = $occurrence_count
-        """
-    
         with self.driver.session() as session:
     
             for relationship in relationships:
-    
+                
+                relationship_label = (
+                    relationship.relationship_type
+                    .strip()
+                    .upper()
+                    .replace(" ", "_")
+                    .replace("-", "_")
+                    .replace("/", "_")
+                )
+                
+                query = f"""
+                MATCH (source:Entity {{
+                    entity_id: $source_entity_id
+                }})
+                
+                MATCH (target:Entity {{
+                    entity_id: $target_entity_id
+                }})
+                
+                MERGE (source)-[r:{relationship_label} {{
+                    source_entity_id:$source_entity_id,
+                    target_entity_id:$target_entity_id
+                }}]->(target)
+                
+                SET
+                    r.relationship_id = $relationship_id,
+                    r.company = $company,
+                    r.ticker = $ticker,
+                    r.source_document = $source_document,
+                    r.file_name = $file_name,
+                    r.confidence = $confidence,
+                    r.occurrence_count = $occurrence_count
+                """
                 session.run(
                     query,
                     relationship.model_dump(),
                 )
-    
+
         logger.info(
             "Imported %s relationships.",
             len(relationships),
