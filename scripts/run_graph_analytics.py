@@ -1,4 +1,4 @@
-from app.graph.graph_analytics import GraphAnalytics
+from app.analytics.graph_analytics import GraphAnalytics
 
 
 def print_separator():
@@ -107,7 +107,7 @@ def main():
 
     except Exception as error:
 
-        print_separator()
+        print_separator() 
         print("Graph Analytics Failed")
         print_separator()
 
