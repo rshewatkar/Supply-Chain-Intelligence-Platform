@@ -47,13 +47,15 @@ class GraphAnalytics:
 
         query = """
         CALL gds.graph.project(
-
             $graph_name,
-
             'Entity',
-            '*'
-
-                                                               
+            {
+               relationships : {
+                   type: '*',
+                    orientation: 'UNDIRECTED'
+                    }
+            }
+            
         )
         """
 
