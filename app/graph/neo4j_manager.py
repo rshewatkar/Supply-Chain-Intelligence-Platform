@@ -91,7 +91,7 @@ class Neo4jManager:
 
         Returns
         -------
-        list
+        list[dict]
         """
 
         try:
@@ -103,7 +103,9 @@ class Neo4jManager:
                     parameters or {},
                 )
 
-                return list(result)
+                records = list(result)
+
+                return [record.data() for record in records]
 
         except Neo4jError as error:
 
