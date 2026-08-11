@@ -38,3 +38,6 @@ neo4j/
 
 # Qdrant
 qdrant_storage/
+
+#command file
+notepad.txt

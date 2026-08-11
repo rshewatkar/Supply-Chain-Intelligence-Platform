@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from app.dashboard.dashborad_queries import DashboardQueries
+from app.dashboard.dashboard_queries import DashboardQueries
 
 # =========================================================
 # Page Configuration
