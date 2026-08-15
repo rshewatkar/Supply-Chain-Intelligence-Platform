@@ -61,11 +61,7 @@ class SupplierDependency:
             count(r) AS total_relationships,
             count(
                 CASE
-                    WHEN type(r) IN [
-                        "SUPPLIES_TO",
-                        "SUPPLIES",
-                        "CUSTOMER_OF"
-                    ]
+                    WHEN type(r) IN $supplier_relationship_types
                     THEN r
                 END
             ) AS supplier_relationships
@@ -95,11 +91,11 @@ class SupplierDependency:
         ORDER BY supplier_dependency DESC
         """
 
-        result = self.neo4j.execute_query(query)
-
-        logger.info(
-            "Supplier dependency calculated for %s entities.",
-            len(result),
+        result = self.neo4j.execute_query(
+            query,
+            {
+                "supplier_relationship_types": self.SUPPLIER_RELATIONSHIP_TYPES,
+            }
         )
 
         return result

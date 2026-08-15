@@ -52,8 +52,11 @@ class CountryDependency:
             total_relationships,
             CASE
                 WHEN total_relationships = 0 THEN 0.0
-                ELSE toFloat(total_relationships)
+                ELSE 
+                    toFloat(connected_entities) / total_relationships
             END AS dependency_score
+        
+        SET country.country_dependency = dependency_score
 
         RETURN
             country.name AS country,
@@ -89,22 +92,21 @@ class CountryDependency:
 
         query = """
         MATCH (country:Entity)
-        WHERE country.entity_type = 'COUNTRY'
-
-        OPTIONAL MATCH (country)-[r]-(entity:Entity)
-        WHERE entity.entity_type <> 'COUNTRY'
-
-        WITH
-            country,
-            count(DISTINCT entity) AS connected_entities,
-            count(r) AS total_relationships
+        
+        WHERE 
+             country.entity_type = 'COUNTRY'
+             AND country.country_dependency IS NOT NULL    
 
         RETURN
             country.name AS country,
-            connected_entities,
-            total_relationships
+            country.country_dependency AS country_dependency,
+            country.degree AS degree,
+            country.betweenness AS betweenness,
+            country.closeness AS closeness,
+            country.risk_score AS risk_score,
+            country.risk_level AS risk_level
 
-        ORDER BY total_relationships DESC
+        ORDER BY country_dependency DESC
 
         LIMIT $limit
         """

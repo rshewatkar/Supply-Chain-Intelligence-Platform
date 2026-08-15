@@ -25,10 +25,10 @@ def main():
         for row in results:
 
             print(
-                f"{row['country']:<25}"
-                f"Entities: {row['connected_entities']:<5}"
-                f"Relationships: {row['total_relationships']:<5}"
-                f"Score: {row['dependency_score']:.4f}"
+                f"{row.get('country'):<25}"
+                f"Entities: {row.get('connected_entities')or 0:<5}"
+                f"Relationships: {row.get('total_relationships')or 0:<5}"
+                f"Score: {row.get('dependency_score'):.4f}"
             )
 
         print()
@@ -40,9 +40,10 @@ def main():
         for row in top_countries:
 
             print(
-                f"{row['country']:<25}"
-                f"Entities: {row['connected_entities']:<5}"
-                f"Relationships: {row['total_relationships']}"
+                f"{row.get('country'):<25}"
+                f"Entities: {row.get('connected_entities')or 0:<5}"
+                f"Relationships: {row.get('total_relationships')or 0:<5}"
+                f"Score: {row.get('country_dependency'):.4f}"
             )
 
         print()
@@ -54,10 +55,10 @@ def main():
         for row in risk_data:
 
             print(
-                f"{row['country']:<25}"
-                f"Entities: {row['connected_entities']:<5}"
-                f"Relationships: {row['total_relationships']:<5}"
-                f"Risk: {row['risk_level']}"
+                f"{row.get('country'):<25}"
+                f"Entities: {row.get('connected_entities')or 0:<5}"
+                f"Relationships: {row.get('total_relationships')or 0:<5}"
+                f"Risk: {row.get('risk_level')}"
             )
 
         print()
