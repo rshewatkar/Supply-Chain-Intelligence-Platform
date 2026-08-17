@@ -15,8 +15,14 @@ class TierAnalysis:
     Tier-2:
         Entity reached through two relationship hops.
 
-    The analysis uses the existing Neo4j graph and dynamic
-    relationship types.
+    Dependency metrics are persisted on COMPANY nodes:
+
+        tier1_dependency_count
+        tier2_dependency_count
+        tier1_dependency
+        tier2_dependency
+
+    The dependency scores are normalized between 0.0 and 1.0.
     """
 
     def __init__(self):
@@ -70,7 +76,7 @@ class TierAnalysis:
 
         Tier-2 = two-hop relationships.
 
-        Direct Tier-1 entities are excluded from the result.
+        Direct Tier-1 entities are excluded.
         """
 
         logger.info(
@@ -106,12 +112,13 @@ class TierAnalysis:
         )
 
     # =====================================================
-    # Tier Summary
+    # Tier Summary - Single Company
     # =====================================================
 
     def get_tier_summary(self, company_name):
         """
-        Return Tier-1 and Tier-2 dependency counts.
+        Return Tier-1 and Tier-2 dependency counts
+        for one company.
         """
 
         logger.info(
@@ -126,27 +133,172 @@ class TierAnalysis:
 
         OPTIONAL MATCH (company)-[]->(tier1:Entity)
 
-        WITH company, count(DISTINCT tier1) AS tier1_count
+        WITH
+            company,
+            count(DISTINCT tier1) AS tier1_count
 
-        OPTIONAL MATCH (company)-[]->(t1:Entity)-[]->(tier2:Entity)
+        OPTIONAL MATCH
+            (company)-[]->(tier1_entity:Entity)-[]->(tier2:Entity)
 
         WHERE tier2 <> company
           AND NOT (company)-[]->(tier2)
 
+        WITH
+            company,
+            tier1_count,
+            count(DISTINCT tier2) AS tier2_count
+
         RETURN
             company.name AS company,
             tier1_count AS tier_1_dependencies,
-            count(DISTINCT tier2) AS tier_2_dependencies
+            tier2_count AS tier_2_dependencies
         """
 
-        result = self.neo4j.execute_query(
+        return self.neo4j.execute_query(
             query,
             {
                 "company_name": company_name,
             },
         )
 
-        return result
+    # =====================================================
+    # Calculate Metrics - ALL Companies
+    # =====================================================
+
+    def calculate_dependency_metrics(self):
+        """
+        Calculate Tier-1 and Tier-2 dependency metrics
+        for every COMPANY node.
+
+        Metrics written to Neo4j:
+
+            tier1_dependency_count
+            tier2_dependency_count
+
+            tier1_dependency
+            tier2_dependency
+
+        Formula:
+
+            total_dependencies =
+                tier1_count + tier2_count
+
+            tier1_dependency =
+                tier1_count / total_dependencies
+
+            tier2_dependency =
+                tier2_count / total_dependencies
+
+        Companies with no dependencies receive:
+
+            tier1_dependency = 0.0
+            tier2_dependency = 0.0
+        """
+
+        logger.info(
+            "Calculating Tier-1 / Tier-2 dependency metrics "
+            "for all companies..."
+        )
+
+        query = """
+        MATCH (company:Entity)
+        WHERE company.entity_type = 'COMPANY'
+
+        // -------------------------------------------------
+        // Tier-1
+        // -------------------------------------------------
+
+        OPTIONAL MATCH
+            (company)-[]->(tier1:Entity)
+
+        WITH
+            company,
+            count(DISTINCT tier1) AS tier1_count
+
+        // -------------------------------------------------
+        // Tier-2
+        // -------------------------------------------------
+
+        OPTIONAL MATCH
+            (company)-[]->(tier1_entity:Entity)-[]->(tier2:Entity)
+
+        WHERE tier2 <> company
+          AND NOT (company)-[]->(tier2)
+
+        WITH
+            company,
+            tier1_count,
+            count(DISTINCT tier2) AS tier2_count
+
+        // -------------------------------------------------
+        // Total dependency count
+        // -------------------------------------------------
+
+        WITH
+            company,
+            tier1_count,
+            tier2_count,
+            tier1_count + tier2_count AS total_dependencies
+
+        // -------------------------------------------------
+        // Normalized metrics
+        // -------------------------------------------------
+
+        WITH
+            company,
+            tier1_count,
+            tier2_count,
+            total_dependencies,
+
+            CASE
+                WHEN total_dependencies = 0
+                THEN 0.0
+                ELSE
+                    toFloat(tier1_count)
+                    / total_dependencies
+            END AS tier1_dependency,
+
+            CASE
+                WHEN total_dependencies = 0
+                THEN 0.0
+                ELSE
+                    toFloat(tier2_count)
+                    / total_dependencies
+            END AS tier2_dependency
+
+        // -------------------------------------------------
+        // Persist metrics
+        // -------------------------------------------------
+
+        SET
+            company.tier1_dependency_count = tier1_count,
+            company.tier2_dependency_count = tier2_count,
+
+            company.tier1_dependency = tier1_dependency,
+            company.tier2_dependency = tier2_dependency
+
+        RETURN
+            company.name AS company,
+
+            tier1_count AS tier_1_dependencies,
+            tier2_count AS tier_2_dependencies,
+
+            total_dependencies,
+
+            tier1_dependency,
+            tier2_dependency
+
+        ORDER BY tier1_dependency DESC
+        """
+
+        results = self.neo4j.execute_query(query)
+
+        logger.info(
+            "Tier dependency metrics calculated for %s companies.",
+            len(results),
+        )
+
+        return results
 
     # =====================================================
     # Highest Exposure Tier-1 Entities
@@ -228,41 +380,104 @@ class TierAnalysis:
         )
 
     # =====================================================
+    # Tier Dependency Summary - ALL Companies
+    # =====================================================
+
+    def dependency_summary(self):
+        """
+        Return Tier-1 / Tier-2 metrics for all companies.
+        """
+
+        query = """
+        MATCH (company:Entity)
+        WHERE company.entity_type = 'COMPANY'
+
+        RETURN
+            company.name AS company,
+
+            company.tier1_dependency_count
+                AS tier_1_dependencies,
+
+            company.tier2_dependency_count
+                AS tier_2_dependencies,
+
+            company.tier1_dependency
+                AS tier1_dependency,
+
+            company.tier2_dependency
+                AS tier2_dependency
+
+        ORDER BY tier1_dependency DESC
+        """
+
+        return self.neo4j.execute_query(query)
+
+    # =====================================================
     # Run Analysis
     # =====================================================
 
-    def run(self, company_name):
+    def run(self, company_name=None):
         """
-        Run complete Tier-1 / Tier-2 analysis.
+        Run Tier-1 / Tier-2 analysis.
+
+        If company_name is provided:
+            Run detailed analysis for that company.
+
+        Regardless of company_name:
+            Calculate and persist dependency metrics
+            for ALL companies.
         """
 
         logger.info(
-            "Starting Tier-1 / Tier-2 analysis for %s...",
-            company_name,
+            "Starting Tier-1 / Tier-2 analysis..."
         )
 
-        tier_1 = self.get_tier_1_dependencies(
-            company_name
-        )
+        # -------------------------------------------------
+        # Calculate metrics for ALL companies
+        # -------------------------------------------------
 
-        tier_2 = self.get_tier_2_dependencies(
-            company_name
-        )
+        metrics = self.calculate_dependency_metrics()
 
-        summary = self.get_tier_summary(
-            company_name
-        )
-
-        logger.info(
-            "Tier analysis completed for %s.",
-            company_name,
-        )
-
-        return {
-            "summary": summary,
-            "tier_1": tier_1,
-            "tier_2": tier_2,
+        result = {
+            "metrics": metrics,
         }
+
+        # -------------------------------------------------
+        # Optional detailed company analysis
+        # -------------------------------------------------
+
+        if company_name:
+
+            logger.info(
+                "Running detailed analysis for %s...",
+                company_name,
+            )
+
+            tier_1 = self.get_tier_1_dependencies(
+                company_name
+            )
+
+            tier_2 = self.get_tier_2_dependencies(
+                company_name
+            )
+
+            summary = self.get_tier_summary(
+                company_name
+            )
+
+            result.update(
+                {
+                    "summary": summary,
+                    "tier_1": tier_1,
+                    "tier_2": tier_2,
+                }
+            )
+
+        logger.info(
+            "Tier analysis completed."
+        )
+
+        return result
 
     # =====================================================
     # Close
