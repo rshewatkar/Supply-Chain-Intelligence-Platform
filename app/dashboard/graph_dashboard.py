@@ -3,6 +3,7 @@ import streamlit as st
 
 from app.dashboard.dashboard_queries import DashboardQueries
 
+
 # =========================================================
 # Page Configuration
 # =========================================================
@@ -34,10 +35,11 @@ st.title("Supply Chain Intelligence Platform")
 
 st.markdown(
     """
-    ### Graph Analytics Dashboard
+    ### Graph Analytics & Risk Dashboard
 
     Explore supply-chain entities, relationships,
-    graph centrality, communities, and risk metrics.
+    graph centrality, communities, dependency metrics,
+    and risk analytics.
     """
 )
 
@@ -66,7 +68,7 @@ graph_limit = st.sidebar.slider(
 
 
 # =========================================================
-# Summary
+# Graph Overview
 # =========================================================
 
 st.header("Graph Overview")
@@ -78,19 +80,19 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(
         "Entities",
-        summary["total_entities"],
+        summary.get("total_entities", 0),
     )
 
 with col2:
     st.metric(
         "Relationships",
-        summary["total_relationships"],
+        summary.get("total_relationships", 0),
     )
 
 with col3:
     st.metric(
         "Communities",
-        summary["total_communities"],
+        summary.get("total_communities", 0),
     )
 
 
@@ -107,12 +109,21 @@ if entity_distribution:
     df_entities = pd.DataFrame(entity_distribution)
 
     if {"type", "total"}.issubset(df_entities.columns):
+
         st.bar_chart(
             df_entities.set_index("type")["total"]
         )
+
+        st.dataframe(
+            df_entities,
+            use_container_width=True,
+            hide_index=True,
+        )
+
     else:
         st.warning(
-            "Entity distribution is not available in the expected shape."
+            "Entity distribution is not available "
+            "in the expected format."
         )
 
 
@@ -135,6 +146,7 @@ if relationship_distribution:
     if {"relationship_type", "total"}.issubset(
         df_relationships.columns
     ):
+
         st.bar_chart(
             df_relationships.set_index(
                 "relationship_type"
@@ -146,9 +158,11 @@ if relationship_distribution:
             use_container_width=True,
             hide_index=True,
         )
+
     else:
         st.warning(
-            "Relationship distribution is not available in the expected shape."
+            "Relationship distribution is not available "
+            "in the expected format."
         )
 
 
@@ -185,9 +199,11 @@ with tab1:
             "Top Entities by Degree Centrality"
         )
 
-        st.bar_chart(
-            df.set_index("name")["degree"]
-        )
+        if {"name", "degree"}.issubset(df.columns):
+
+            st.bar_chart(
+                df.set_index("name")["degree"]
+            )
 
         st.dataframe(
             df,
@@ -218,9 +234,13 @@ with tab2:
             "Top Entities by Betweenness Centrality"
         )
 
-        st.bar_chart(
-            df.set_index("name")["betweenness"]
-        )
+        if {"name", "betweenness"}.issubset(
+            df.columns
+        ):
+
+            st.bar_chart(
+                df.set_index("name")["betweenness"]
+            )
 
         st.dataframe(
             df,
@@ -251,9 +271,13 @@ with tab3:
             "Top Entities by Closeness Centrality"
         )
 
-        st.bar_chart(
-            df.set_index("name")["closeness"]
-        )
+        if {"name", "closeness"}.issubset(
+            df.columns
+        ):
+
+            st.bar_chart(
+                df.set_index("name")["closeness"]
+            )
 
         st.dataframe(
             df,
@@ -263,12 +287,28 @@ with tab3:
 
 
 # =========================================================
-# Risk Analytics
+# RISK DASHBOARD
 # =========================================================
 
-st.header("Risk Analytics")
+st.header("Risk Dashboard")
 
-risk_distribution = queries.get_risk_distribution()
+st.markdown(
+    """
+    Risk metrics are read from the values calculated and
+    persisted by the Risk Score Engine.
+    """
+)
+
+
+# =========================================================
+# Risk Level Summary
+# =========================================================
+
+st.subheader("Risk Level Distribution")
+
+risk_distribution = (
+    queries.get_risk_distribution()
+)
 
 if risk_distribution:
 
@@ -279,16 +319,33 @@ if risk_distribution:
     if {"risk_level", "total"}.issubset(
         df_risk_distribution.columns
     ):
-        st.bar_chart(
-            df_risk_distribution.set_index(
-                "risk_level"
-            )["total"]
-        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.bar_chart(
+                df_risk_distribution.set_index(
+                    "risk_level"
+                )["total"]
+            )
+
+        with col2:
+            st.dataframe(
+                df_risk_distribution,
+                use_container_width=True,
+                hide_index=True,
+            )
+
     else:
         st.warning(
-            "Risk-level distribution is not available in the expected shape."
+            "Risk distribution is not available "
+            "in the expected format."
         )
 
+
+# =========================================================
+# Highest Risk Entities
+# =========================================================
 
 st.subheader("Highest Risk Entities")
 
@@ -298,13 +355,197 @@ risk_data = queries.get_top_risk_entities(
 
 if risk_data:
 
-    df_risk = pd.DataFrame(risk_data)
-
-    st.dataframe(
-        df_risk,
-        use_container_width=True,
-        hide_index=True,
+    df_risk = pd.DataFrame(
+        risk_data
     )
+
+    if "risk_score" in df_risk.columns:
+
+        st.dataframe(
+            df_risk,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+else:
+
+    st.info(
+        "No risk-scored entities were found."
+    )
+
+
+# =========================================================
+# Risk Score Chart
+# =========================================================
+
+if risk_data:
+
+    df_risk_chart = pd.DataFrame(
+        risk_data
+    )
+
+    if {"name", "risk_score"}.issubset(
+        df_risk_chart.columns
+    ):
+
+        st.subheader(
+            "Risk Score by Entity"
+        )
+
+        st.bar_chart(
+            df_risk_chart.set_index(
+                "name"
+            )["risk_score"]
+        )
+
+
+# =========================================================
+# Dependency Risk Metrics
+# =========================================================
+
+st.subheader("Dependency Risk Metrics")
+
+if risk_data:
+
+    df_dependency = pd.DataFrame(
+        risk_data
+    )
+
+    dependency_columns = [
+        "name",
+        "supplier_dependency",
+        "country_dependency",
+        "tier1_dependency",
+        "tier2_dependency",
+        "risk_score",
+        "risk_level",
+    ]
+
+    available_columns = [
+        column
+        for column in dependency_columns
+        if column in df_dependency.columns
+    ]
+
+    if available_columns:
+
+        st.dataframe(
+            df_dependency[available_columns],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    else:
+
+        st.info(
+            "Dependency metrics are not available "
+            "from DashboardQueries."
+        )
+
+
+# =========================================================
+# Risk Entity Explorer
+# =========================================================
+
+st.subheader("Risk Entity Explorer")
+
+risk_entities = queries.get_top_risk_entities(
+    100
+)
+
+if risk_entities:
+
+    risk_entity_names = [
+        row["name"]
+        for row in risk_entities
+        if row.get("name")
+    ]
+
+    if risk_entity_names:
+
+        selected_risk_entity = st.selectbox(
+            "Select entity for risk analysis",
+            risk_entity_names,
+            key="risk_entity_selector",
+        )
+
+        selected_entity_data = [
+            row
+            for row in risk_entities
+            if row.get("name")
+            == selected_risk_entity
+        ]
+
+        if selected_entity_data:
+
+            entity = selected_entity_data[0]
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "Risk Score",
+                    f"{entity.get('risk_score', 0):.4f}",
+                )
+
+            with col2:
+                st.metric(
+                    "Risk Level",
+                    entity.get(
+                        "risk_level",
+                        "UNKNOWN",
+                    ),
+                )
+
+            with col3:
+                st.metric(
+                    "Supplier Dependency",
+                    f"{entity.get('supplier_dependency', 0):.4f}",
+                )
+
+            st.write("### Dependency Breakdown")
+
+            dependency_data = {
+                "Metric": [
+                    "Supplier Dependency",
+                    "Country Dependency",
+                    "Tier-1 Dependency",
+                    "Tier-2 Dependency",
+                    "Risk Score",
+                ],
+                "Value": [
+                    entity.get(
+                        "supplier_dependency",
+                        0,
+                    ),
+                    entity.get(
+                        "country_dependency",
+                        0,
+                    ),
+                    entity.get(
+                        "tier1_dependency",
+                        0,
+                    ),
+                    entity.get(
+                        "tier2_dependency",
+                        0,
+                    ),
+                    entity.get(
+                        "risk_score",
+                        0,
+                    ),
+                ],
+            }
+
+            df_selected_risk = pd.DataFrame(
+                dependency_data
+            )
+
+            st.dataframe(
+                df_selected_risk,
+                use_container_width=True,
+                hide_index=True,
+            )
 
 
 # =========================================================
@@ -329,15 +570,20 @@ if community_data:
         hide_index=True,
     )
 
-    st.subheader(
-        "Community Average Risk"
-    )
+    if {
+        "community",
+        "avg_risk",
+    }.issubset(df_communities.columns):
 
-    st.bar_chart(
-        df_communities.set_index(
-            "community"
-        )["avg_risk"]
-    )
+        st.subheader(
+            "Community Average Risk"
+        )
+
+        st.bar_chart(
+            df_communities.set_index(
+                "community"
+            )["avg_risk"]
+        )
 
 
 # =========================================================
@@ -349,32 +595,36 @@ if community_data:
     community_values = [
         row["community"]
         for row in community_data
+        if row.get("community") is not None
     ]
 
-    selected_community = st.selectbox(
-        "Select Community",
-        community_values,
-    )
+    if community_values:
 
-    members = queries.get_community_members(
-        selected_community
-    )
-
-    if members:
-
-        st.subheader(
-            f"Community {selected_community} Members"
+        selected_community = st.selectbox(
+            "Select Community",
+            community_values,
+            key="community_selector",
         )
 
-        df_members = pd.DataFrame(
-            members
+        members = queries.get_community_members(
+            selected_community
         )
 
-        st.dataframe(
-            df_members,
-            use_container_width=True,
-            hide_index=True,
-        )
+        if members:
+
+            st.subheader(
+                f"Community {selected_community} Members"
+            )
+
+            df_members = pd.DataFrame(
+                members
+            )
+
+            st.dataframe(
+                df_members,
+                use_container_width=True,
+                hide_index=True,
+            )
 
 
 # =========================================================
@@ -386,6 +636,7 @@ st.header("Entity Explorer")
 entity_names = [
     row["name"]
     for row in queries.get_top_risk_entities(100)
+    if row.get("name")
 ]
 
 if entity_names:
@@ -393,6 +644,7 @@ if entity_names:
     selected_entity = st.selectbox(
         "Select Entity",
         entity_names,
+        key="entity_selector",
     )
 
     entity_details = (
@@ -409,7 +661,7 @@ if entity_names:
 
 
 # =========================================================
-# Graph Data
+# Graph Relationships
 # =========================================================
 
 st.header("Graph Relationships")

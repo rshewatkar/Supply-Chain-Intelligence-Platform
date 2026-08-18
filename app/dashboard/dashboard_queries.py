@@ -192,13 +192,20 @@ class DashboardQueries:
         RETURN
             e.name AS name,
             e.entity_type AS type,
+    
             e.risk_score AS risk_score,
             e.risk_level AS risk_level,
+    
+            e.supplier_dependency AS supplier_dependency,
+            e.country_dependency AS country_dependency,
+            e.tier1_dependency AS tier1_dependency,
+            e.tier2_dependency AS tier2_dependency,
+    
             e.degree AS degree,
             e.betweenness AS betweenness,
             e.closeness AS closeness,
             e.community AS community
-
+        
         ORDER BY e.risk_score DESC
 
         LIMIT $limit
@@ -346,18 +353,64 @@ class DashboardQueries:
         RETURN
             e.name AS name,
             e.entity_type AS type,
+    
             e.degree AS degree,
             e.betweenness AS betweenness,
             e.closeness AS closeness,
             e.community AS community,
+    
+            e.supplier_dependency AS supplier_dependency,
+            e.country_dependency AS country_dependency,
+            e.tier1_dependency AS tier1_dependency,
+            e.tier2_dependency AS tier2_dependency,
+    
             e.risk_score AS risk_score,
             e.risk_level AS risk_level
+            
         """
 
         return self.neo4j.execute_query(
             query,
             {
                 "entity_name": entity_name,
+            },
+        )
+    
+    # =====================================================
+    # Risk Dependency Metrics
+    # =====================================================
+    
+    def get_risk_dependency_metrics(self, limit=20):
+        """
+        Return dependency metrics used by the Risk Dashboard.
+        """
+    
+        query = """
+        MATCH (e:Entity)
+    
+        WHERE e.risk_score IS NOT NULL
+    
+        RETURN
+            e.name AS name,
+            e.entity_type AS type,
+    
+            e.supplier_dependency AS supplier_dependency,
+            e.country_dependency AS country_dependency,
+            e.tier1_dependency AS tier1_dependency,
+            e.tier2_dependency AS tier2_dependency,
+    
+            e.risk_score AS risk_score,
+            e.risk_level AS risk_level
+    
+        ORDER BY e.risk_score DESC
+    
+        LIMIT $limit
+        """
+    
+        return self.neo4j.execute_query(
+            query,
+            {
+                "limit": limit,
             },
         )
 
