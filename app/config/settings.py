@@ -94,12 +94,23 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-    
+      
     # =========================================
     # Random Seed
     # =========================================
     
     random_seed: int = 42
+    
+    # =========================================
+    # LLM Configuration 
+    # =========================================
+    
+    llm_provider: str = "lm_studio"
+
+    llm_model: str = "qwen2.5-7b-instruct"
+
+    llm_base_url: str = "http://localhost:1234/v1"
+    
 
 
 settings = Settings()
