@@ -63,8 +63,9 @@ def main():
 
     except Exception as exc:
 
-        logger.exception(
-            "LLM test failed."
+        logger.error(
+            "LLM test failed: %s",
+            exc,
         )
 
         print("\n" + "=" * 60)
