@@ -1,80 +1,299 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from app.rag.llm import LLM
 
 
-def test_llm_rejects_empty_prompt():
+# =========================================================
+# Initialization
+# =========================================================
 
-    llm = LLM.__new__(LLM)
+def test_llm_initialization():
 
-    llm.provider = "lm_studio"
+    with patch(
+        "app.rag.llm.OpenAI"
+    ) as mock_client:
 
-    with pytest.raises(ValueError):
-        llm.generate("")
+        llm = LLM()
 
+        mock_client.assert_called_once()
 
-def test_llm_rejects_whitespace_prompt():
+        assert llm.get_model_name() is not None
 
-    llm = LLM.__new__(LLM)
-
-    llm.provider = "lm_studio"
-
-    with pytest.raises(ValueError):
-        llm.generate("   ")
-
-
-def test_llm_provider():
-
-    llm = LLM.__new__(LLM)
-
-    llm.provider = "lm_studio"
-    llm.model = "test-model"
-
-    assert llm.get_provider() == "lm_studio"
-    assert llm.get_model() == "test-model"
+        llm.close()
 
 
-def test_unsupported_provider():
+# =========================================================
+# Empty Prompt
+# =========================================================
 
-    llm = LLM.__new__(LLM)
+def test_empty_prompt():
 
-    llm.provider = "unsupported"
+    with patch(
+        "app.rag.llm.OpenAI"
+    ):
 
-    with pytest.raises(ValueError):
-        llm.generate(
-            "What is NVIDIA?"
+        llm = LLM()
+
+        with pytest.raises(ValueError):
+
+            llm.generate("")
+
+        llm.close()
+
+
+# =========================================================
+# Whitespace Prompt
+# =========================================================
+
+def test_whitespace_prompt():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ):
+
+        llm = LLM()
+
+        with pytest.raises(ValueError):
+
+            llm.generate("   ")
+
+        llm.close()
+
+
+# =========================================================
+# Generate Response
+# =========================================================
+
+def test_generate_response():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ) as mock_client:
+
+        # -----------------------------------------
+        # Mock OmniRoute response
+        # -----------------------------------------
+
+        mock_response = MagicMock()
+
+        mock_response.choices = [
+            MagicMock()
+        ]
+
+        mock_response.choices[0].message.content = (
+            "Supplier dependency is an important "
+            "supply-chain risk indicator."
         )
 
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .return_value
+        ) = mock_response
 
-def test_lm_studio_connection_error(monkeypatch):
+        # -----------------------------------------
+        # Initialize LLM
+        # -----------------------------------------
 
-    from openai import APIConnectionError
+        llm = LLM()
 
-    class FakeCompletions:
-        def create(self, **kwargs):
-            raise APIConnectionError(request=None)
+        # -----------------------------------------
+        # Generate response
+        # -----------------------------------------
 
-    class FakeChat:
-        completions = FakeCompletions()
-
-    class FakeOpenAI:
-        chat = FakeChat()
-
-    llm = LLM.__new__(LLM)
-
-    llm.provider = "lm_studio"
-    llm.model = "test-model"
-    llm.base_url = "http://localhost:1234/v1"
-
-    monkeypatch.setattr(
-        "openai.OpenAI",
-        lambda **kwargs: FakeOpenAI(),
-    )
-
-    with pytest.raises(RuntimeError) as exc_info:
-        llm.generate(
-            "What is NVIDIA?"
+        result = llm.generate(
+            "Why is supplier dependency important?"
         )
 
-    assert "Could not connect to LM Studio" in str(exc_info.value)
-    assert llm.base_url in str(exc_info.value)
+        # -----------------------------------------
+        # Assertions
+        # -----------------------------------------
+
+        assert isinstance(
+            result,
+            str,
+        )
+
+        assert (
+            result
+            == "Supplier dependency is an important "
+            "supply-chain risk indicator."
+        )
+
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .assert_called_once()
+        )
+
+        llm.close()
+
+
+# =========================================================
+# OmniRoute Empty Response
+# =========================================================
+
+def test_empty_omniroute_response():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ) as mock_client:
+
+        # -----------------------------------------
+        # Mock empty OmniRoute response
+        # -----------------------------------------
+
+        mock_response = MagicMock()
+
+        mock_response.choices = [
+            MagicMock()
+        ]
+
+        mock_response.choices[0].message.content = ""
+
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .return_value
+        ) = mock_response
+
+        # -----------------------------------------
+        # Initialize LLM
+        # -----------------------------------------
+
+        llm = LLM()
+
+        # -----------------------------------------
+        # Empty response should raise RuntimeError
+        # -----------------------------------------
+
+        with pytest.raises(RuntimeError):
+
+            llm.generate(
+                "Test question"
+            )
+
+        llm.close()
+
+
+# =========================================================
+# No Choices Response
+# =========================================================
+
+def test_no_choices_response():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ) as mock_client:
+
+        mock_response = MagicMock()
+
+        mock_response.choices = []
+
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .return_value
+        ) = mock_response
+
+        llm = LLM()
+
+        with pytest.raises(RuntimeError):
+
+            llm.generate(
+                "Test question"
+            )
+
+        llm.close()
+
+
+# =========================================================
+# Empty Chat Message
+# =========================================================
+
+def test_empty_chat_message():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ):
+
+        llm = LLM()
+
+        with pytest.raises(ValueError):
+
+            llm.chat("")
+
+        llm.close()
+
+
+# =========================================================
+# Chat Response
+# =========================================================
+
+def test_chat_response():
+
+    with patch(
+        "app.rag.llm.OpenAI"
+    ) as mock_client:
+
+        mock_response = MagicMock()
+
+        mock_response.choices = [
+            MagicMock()
+        ]
+
+        mock_response.choices[0].message.content = (
+            "Supplier dependency can increase "
+            "supply-chain risk."
+        )
+
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .return_value
+        ) = mock_response
+
+        llm = LLM()
+
+        result = llm.chat(
+            "Explain supplier dependency."
+        )
+
+        assert isinstance(
+            result,
+            str,
+        )
+
+        assert (
+            result
+            == "Supplier dependency can increase "
+            "supply-chain risk."
+        )
+
+        (
+            mock_client
+            .return_value
+            .chat
+            .completions
+            .create
+            .assert_called_once()
+        )
+
+        llm.close()

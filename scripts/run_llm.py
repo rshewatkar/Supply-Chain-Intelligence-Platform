@@ -6,74 +6,72 @@ logger = get_logger(__name__)
 
 
 def main():
-
     print("=" * 60)
     print("Supply Chain Intelligence Platform")
     print("LLM Test")
     print("=" * 60)
 
-    llm = LLM()
+    llm = None
 
     try:
+        # =====================================================
+        # Initialize LLM
+        # =====================================================
+
+        llm = LLM()
 
         print(
-            f"\nProvider : {llm.get_provider()}"
+            f"\nModel: {llm.get_model_name()}"
         )
 
-        print(
-            f"Model    : {llm.get_model()}"
-        )
+        # =====================================================
+        # Test Prompt
+        # =====================================================
 
-        try:
-            prompt = input(
-                "\nEnter prompt: "
-            ).strip()
+        prompt = """
+You are a supply-chain intelligence assistant.
 
-        except EOFError:
-            print(
-                "\nNo prompt received. Run this command in an interactive "
-                "terminal or pipe a prompt into it."
-            )
+Answer the following question clearly and concisely.
 
-            return
+Question:
+Why is supplier dependency important in supply-chain risk analysis?
+"""
 
-        if not prompt:
+        print("\nSending prompt to LLM...")
 
-            print(
-                "Prompt cannot be empty."
-            )
+        # =====================================================
+        # Generate Response
+        # =====================================================
 
-            return
+        response = llm.generate(prompt)
 
-        print("\nGenerating response...\n")
+        # =====================================================
+        # Display Response
+        # =====================================================
 
-        answer = llm.generate(
-            prompt
-        )
-
-        print("=" * 60)
-        print("LLM RESPONSE")
+        print("\n" + "=" * 60)
+        print("LLM Response")
         print("=" * 60)
 
-        print(answer)
+        print(response)
 
         print("\n" + "=" * 60)
         print("LLM Test Completed")
         print("=" * 60)
 
     except Exception as exc:
-
-        logger.error(
-            "LLM test failed: %s",
-            exc,
+        logger.exception(
+            "LLM test failed."
         )
 
         print("\n" + "=" * 60)
         print("LLM Test Failed")
-        print(
-            f"Error: {exc}"
-        )
+        print(f"Error: {exc}")
         print("=" * 60)
+
+    finally:
+        if llm is not None:
+            llm.close()
 
 
 if __name__ == "__main__":

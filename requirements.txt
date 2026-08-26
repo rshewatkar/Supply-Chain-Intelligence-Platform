@@ -17,6 +17,7 @@ lxml
 pymupdf
 
 # AI / LLM
+google-genai
 openai
 langchain
 langchain-openai

@@ -105,12 +105,8 @@ class Settings(BaseSettings):
     # LLM Configuration 
     # =========================================
     
-    llm_provider: str = "lm_studio"
-
-    llm_model: str = "qwen2.5-7b-instruct"
-
-    llm_base_url: str = "http://localhost:1234/v1"
+    omniroute_api_key : str
+    omniroute_base_url: str = "http://localhost:20128/v1"
+    omniroute_model: str = "Rahul-combo"
     
-
-
 settings = Settings()
