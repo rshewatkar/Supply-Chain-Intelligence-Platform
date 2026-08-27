@@ -51,10 +51,12 @@ class RAGPipeline:
             question,
         )
 
-        results = self.retriever.search(
-            question,
-            limit=limit,
+        retrieval_result = self.retriever.retrieve_context(
+            query=question,
+            top_k=limit,
         )
+
+        results = retrieval_result["results"]
 
         logger.info(
             "Retrieved %s relevant chunks.",
@@ -125,7 +127,8 @@ class RAGPipeline:
             retrieved_documents
         )
 
-        prompt = PromptBuilder(
+        prompt_builder = PromptBuilder()
+        prompt = prompt_builder.build(
             question=question,
             context=context,
         )

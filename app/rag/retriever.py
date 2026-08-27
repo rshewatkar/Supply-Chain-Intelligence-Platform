@@ -216,3 +216,13 @@ Relevance Score: {result.get("score", 0.0):.4f}
             "results": results,
             "context": context,
         }
+
+    # =========================================================
+    # Close
+    # =========================================================
+
+    def close(self) -> None:
+        """
+        Close retriever resources.
+        """
+        self.search_engine.close()

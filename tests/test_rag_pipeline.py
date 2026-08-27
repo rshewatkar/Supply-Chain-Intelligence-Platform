@@ -1,9 +1,19 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from app.rag.rag_pipeline import RAGPipeline
 
 
-def test_build_context():
+@patch("app.rag.llm.OpenAI")
+@patch("app.rag.retriever.SearchEngine")
+def test_build_context(mock_search_engine, mock_openai):
+    """Test building context from documents."""
+    
+    # Mock the SearchEngine to avoid Qdrant connection
+    mock_search_engine.return_value = MagicMock()
+    
+    # Mock the OpenAI client to avoid API calls
+    mock_openai.return_value = MagicMock()
+    
     pipeline = RAGPipeline()
 
     documents = [
@@ -28,7 +38,17 @@ def test_build_context():
     pipeline.close()
 
 
-def test_empty_context():
+@patch("app.rag.llm.OpenAI")
+@patch("app.rag.retriever.SearchEngine")
+def test_empty_context(mock_search_engine, mock_openai):
+    """Test building context with empty documents."""
+    
+    # Mock the SearchEngine to avoid Qdrant connection
+    mock_search_engine.return_value = MagicMock()
+    
+    # Mock the OpenAI client to avoid API calls
+    mock_openai.return_value = MagicMock()
+    
     pipeline = RAGPipeline()
 
     context = pipeline.build_context([])
@@ -38,7 +58,17 @@ def test_empty_context():
     pipeline.close()
 
 
-def test_rag_pipeline_flow():
+@patch("app.rag.llm.OpenAI")
+@patch("app.rag.retriever.SearchEngine")
+def test_rag_pipeline_flow(mock_search_engine, mock_openai):
+    """Test the complete RAG pipeline flow with mocked dependencies."""
+    
+    # Mock the SearchEngine to avoid Qdrant connection
+    mock_search_engine.return_value = MagicMock()
+    
+    # Mock the OpenAI client to avoid API calls
+    mock_openai.return_value = MagicMock()
+    
     pipeline = RAGPipeline()
 
     pipeline.retrieve_context = MagicMock(

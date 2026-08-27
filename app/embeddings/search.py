@@ -39,3 +39,9 @@ class SearchEngine:
             )
 
         return formatted
+
+    def close(self) -> None:
+        """
+        Close the search engine resources.
+        """
+        pass
