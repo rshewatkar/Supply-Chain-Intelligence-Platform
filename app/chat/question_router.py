@@ -25,7 +25,7 @@ class QuestionRouter:
     TIER_INTENT = "tier"
     GENERAL_INTENT = "general"
 
-    def route(self, question: str) -> str:
+    def route(self, question: str) -> dict:
         """
         Detect the intent of a user question.
 
@@ -36,8 +36,8 @@ class QuestionRouter:
 
         Returns
         -------
-        str
-            Detected question intent.
+        dict
+            Dictionary containing the detected intent, original question, and confidence score.
         """
 
         if not question or not question.strip():
@@ -45,7 +45,11 @@ class QuestionRouter:
                 "Empty question received by QuestionRouter."
             )
 
-            return self.GENERAL_INTENT
+            return {
+                "intent": self.GENERAL_INTENT,
+                "question": question,
+                "confidence": 0.0,
+            }
 
         normalized_question = (
             question.lower().strip()
@@ -104,7 +108,11 @@ class QuestionRouter:
             intent,
         )
 
-        return intent
+        return {
+            "intent": intent,
+            "question": question,
+            "confidence": 1.0,
+        }
 
     # =====================================================
     # Common Supplier Detection
