@@ -6,8 +6,6 @@ AI-powered Supply Chain Mapping, Knowledge Graph, Risk Analytics &amp; RAG for E
 ### Core Architecture
 
 ```
-```
-
 Supply-Chain-Intelligence-Platform/
 ├── app/
 │   ├── __init__.py
@@ -121,12 +119,12 @@ Supply-Chain-Intelligence-Platform/
 ├── notepad.txt                   # Quick reference for running pipelines
 └── pytest.ini (missing - should exist)
 
-
+```
 
 ### Data Pipeline Flow
 
 ```
-```
+
 
 Raw Documents (PDF)
        │
@@ -171,3 +169,4 @@ Raw Documents (PDF)
 │  7. Dashboard       │  → python -m scripts.run_graph_dashboard
 │  (Streamlit)        │
 └─────────────────────┘
+```
