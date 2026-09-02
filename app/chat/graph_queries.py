@@ -44,7 +44,7 @@ class GraphQueries:
         MATCH (company:Entity {name: $company_name})-[r]-(supplier:Entity)
         WHERE supplier <> company
           AND supplier.entity_type = 'COMPANY'
-          AND type(r) IN ['SUPPLIES', 'DEPENDS_ON', 'PART_OF']
+          AND type(r) IN ['SUPPLIES_TO', 'SUPPLIES', 'CUSTOMER_OF', 'PARTNERS_WITH', 'DEPENDS_ON']
 
         RETURN DISTINCT
             supplier.name AS supplier,

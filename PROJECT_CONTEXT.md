@@ -32,7 +32,7 @@
 |--------|---------|-----------|
 | **analytics/** | Graph analytics & risk scoring | `risk_score_engine.py`, `community_report.py`, `tier_analysis.py`, `country_dependency.py`, `supplier_dependency.py` |
 | **api/** | FastAPI REST endpoints | `main.py` |
-| **chat/** | Question routing for RAG | `question_router.py` |
+| **chat/** | Question routing for RAG & graph queries | `question_router.py`, `graph_queries.py` |
 | **chunking/** | Semantic text chunking | `chunker.py`, `chunk_pipeline.py`, `chunk_utils.py` |
 | **config/** | Configuration management | `settings.py` |
 | **dashboard/** | Streamlit dashboard pages | `graph_dashboard.py`, `risk_dashboard_backend.py`, `dashboard_data.py`, `dashboard_queries.py` |
@@ -64,7 +64,14 @@ All scripts run via: `python -m scripts.<script_name>`
 | `run_country_dependency.py` | Country dependency analysis |
 | `run_supplier_dependency.py` | Supplier dependency analysis |
 | `run_graph_dashboard.py` | Launch graph visualization dashboard |
+| `run_graph_queries.py` | Run sample graph queries (suppliers, entities) |
 | `run_risk_dashboard_backend.py` | Risk dashboard backend |
+| `run_llm.py` | Test LLM integration |
+| `run_rag.py` | Run RAG pipeline |
+| `run_retriever.py` | Test retriever |
+| `run_question_router.py` | Test question routing |
+| `run_prompt.py` | Test prompt templates |
+| `generate_metadata.py` | Generate document metadata |
 | `run_rag.py` | Run RAG query pipeline |
 | `run_retriever.py` | Test vector retrieval |
 | `run_llm.py` | Test LLM integration |
@@ -203,10 +210,17 @@ POST /chat/query
 ---
 
 ## Entity Types
-- `COMPANY`, `PRODUCT`, `LOCATION`, `PERSON`, `EVENT`
+- `COMPANY`, `PRODUCT`, `COUNTRY`, `INDUSTRY`, `TECHNOLOGY`
 
-## Relationship Types
-- `SUPPLIES`, `LOCATED_IN`, `PART_OF`, `DEPENDS_ON`, `PRODUCES`
+## Relationship Types (from `app/extraction/relationship_patterns.py`)
+- **Company:** `PARTNERS_WITH`, `SUPPLIES_TO`, `CUSTOMER_OF`, `COMPETES_WITH`, `ACQUIRES`, `INVESTS_IN`
+- **Product:** `DEVELOPS`, `MANUFACTURES`, `USES`, `SUPPORTS`
+- **Geographic:** `LOCATED_IN`, `OPERATES_IN`
+- **Industry:** `BELONGS_TO`, `OPERATES_INDUSTRY`
+- **Technology:** `POWERED_BY`, `ENABLES`
+
+### Supplier Query Relationship Types (`app/chat/graph_queries.py`)
+The `get_suppliers()` method filters by: `SUPPLIES_TO`, `SUPPLIES`, `CUSTOMER_OF`, `PARTNERS_WITH`, `DEPENDS_ON`
 
 ## Risk Score Calculation
 Based on: geographic concentration, single-source suppliers, tier-level exposure, country risk factors
@@ -261,7 +275,10 @@ streamlit run app/dashboard/graph_dashboard.py
 
 1. **Check** `app/config/settings.py` for configuration options
 2. **Entity extraction** uses patterns in `app/extraction/patterns.py`
-3. **Graph queries** in `app/dashboard/dashboard_queries.py`
-4. **RAG prompts** in `app/rag/prompts.py`
-5. **Chunking strategy** in `app/chunking/chunker.py`
-6. **Embedding model** in `app/embeddings/embedding_generator.py`
+3. **Relationship extraction** uses patterns in `app/extraction/relationship_patterns.py`
+4. **Graph queries** in `app/dashboard/dashboard_queries.py` and `app/chat/graph_queries.py`
+5. **RAG prompts** in `app/rag/prompts.py`
+6. **Chunking strategy** in `app/chunking/chunker.py`
+7. **Embedding model** in `app/embeddings/embedding_generator.py`
+8. **Supplier query** in `app/chat/graph_queries.py` filters by `SUPPLIES_TO`, `SUPPLIES`, `CUSTOMER_OF`, `PARTNERS_WITH`, `DEPENDS_ON`
+9. **Virtual environment:** use `.venv` (not `venv`)

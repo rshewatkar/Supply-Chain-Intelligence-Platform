@@ -25,7 +25,7 @@ def test_get_suppliers(mock_neo4j):
     # Setup
     instance = mock_neo4j.return_value
     # Updated to match the new return structure from get_suppliers logic
-    instance.execute_query.return_value = [{"supplier": "Supplier A", "supplier_type": "COMPANY", "relationship_types": ["SUPPLIES"], "total_occurrence_count": 5}]
+    instance.execute_query.return_value = [{"supplier": "Supplier A", "supplier_type": "COMPANY", "relationship_types": ["CUSTOMER_OF"], "total_occurrence_count": 5}]
     
     # Execute
     queries = GraphQueries()
