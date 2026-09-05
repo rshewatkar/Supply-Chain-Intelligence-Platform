@@ -31,7 +31,7 @@
 | Module | Purpose | Key Files |
 |--------|---------|-----------|
 | **analytics/** | Graph analytics & risk scoring | `risk_score_engine.py`, `community_report.py`, `tier_analysis.py`, `country_dependency.py`, `supplier_dependency.py` |
-| **api/** | FastAPI REST endpoints | `main.py` |
+| **api/** | FastAPI REST endpoints (modular routers) | `main.py`, `routes/graph.py`, `routes/analytics.py` |
 | **chat/** | Question routing for RAG & graph queries | `question_router.py`, `graph_queries.py` |
 | **chunking/** | Semantic text chunking | `chunker.py`, `chunk_pipeline.py`, `chunk_utils.py` |
 | **config/** | Configuration management | `settings.py` |
@@ -183,18 +183,78 @@ DATA_PROCESSED_PATH=data/processed
 
 ---
 
-## API Endpoints (app/api/main.py)
+## API Endpoints Structure
 
+### Router-Based Architecture (Updated Sept 5, 2026)
+The API now uses a modular router-based architecture for better organization and maintainability.
+
+**Status:** ✅ Refactored - All endpoints now properly organized into dedicated routers
+
+### API Routers
+
+#### 1. **Graph Router** (`app/api/routes/graph.py`)
 ```
-GET  /health
-POST /documents/upload
-GET  /documents/{id}
-GET  /entities
-POST /entities/search
-GET  /relationships
-GET  /analytics/risk-scores
-GET  /analytics/centrality
-POST /chat/query
+GET  /graph/entities                          - List entities with limit validation
+POST /graph/entities/search                   - Search entities by name/term
+GET  /graph/relationships                     - Get relationships for an entity
+POST /graph/suppliers                         - Get suppliers for a company
+POST /graph/common-suppliers                  - Find common suppliers between two companies
+```
+
+**Features:**
+- Query parameter validation with FastAPI Query (limit constraints: ge=1, le=100)
+- Comprehensive error handling with try-except-finally blocks
+- Structured logging using `get_logger()`
+- Standardized response format with `count` field
+- Request models: `EntitySearch`, `SupplierRequest`, `CommonSupplierRequest`
+
+#### 2. **Analytics Router** (`app/api/routes/analytics.py`)
+```
+GET  /analytics/risk/entities                 - Top risky entities sorted by risk score
+GET  /analytics/risk/distribution             - Risk distribution across entities
+GET  /analytics/dependencies/{entity_name}    - Dependency metrics for entity
+GET  /analytics/graph/degree                  - Entities with highest degree centrality
+GET  /analytics/graph/betweenness             - Entities with highest betweenness centrality
+GET  /analytics/graph/closeness               - Entities with highest closeness centrality
+GET  /analytics/graph/communities             - Community-level analytics
+```
+
+**Features:**
+- Risk scoring and ranking
+- Multi-dimensional dependency analysis
+- Graph centrality metrics (degree, betweenness, closeness)
+- Community detection and analysis
+- Consistent error handling and logging pattern
+
+#### 3. **Health & Core** (`app/api/main.py`)
+```
+GET  /health                                  - API health check
+GET  /                                        - API root info endpoint
+```
+
+### API Design Patterns (Applied Sept 5, 2026)
+
+**Consistency Standards Applied:**
+1. **Error Handling:** All endpoints use try-except-finally with HTTPException
+2. **Logging:** All errors logged via `get_logger(__name__)`
+3. **Parameter Validation:** Query parameters use FastAPI's Query with constraints (ge=1, le=100)
+4. **Response Format:** Standardized with `count` and data fields
+5. **Resource Management:** All database connections properly closed in finally blocks
+6. **Code Organization:** Section comments for logical grouping
+
+**Standard Response Format:**
+```json
+{
+  "count": 5,
+  "entities": [...]
+}
+```
+
+**Standard Error Response:**
+```json
+{
+  "detail": "Descriptive error message"
+}
 ```
 
 ---
@@ -282,3 +342,71 @@ streamlit run app/dashboard/graph_dashboard.py
 7. **Embedding model** in `app/embeddings/embedding_generator.py`
 8. **Supplier query** in `app/chat/graph_queries.py` filters by `SUPPLIES_TO`, `SUPPLIES`, `CUSTOMER_OF`, `PARTNERS_WITH`, `DEPENDS_ON`
 9. **Virtual environment:** use `.venv` (not `venv`)
+10. **API routers** organized in `app/api/routes/` with modular design (graph.py, analytics.py)
+11. **Error handling pattern:** All endpoints follow try-except-finally with logging and HTTPException
+12. **Parameter validation:** Use FastAPI Query() with constraints for better API documentation and validation
+13. **Response standardization:** All endpoints return `{"count": N, "data": [...]}` format
+
+---
+
+## Project Status & Changelog
+
+### Last Updated: September 5, 2026
+
+#### ✅ Completed Tasks
+
+**API Architecture Refactoring:**
+- ✅ Created modular router-based API structure
+  - Separated concerns into `graph.py` and `analytics.py` routers
+  - Moved all endpoints from `main.py` to dedicated route files
+  - Removed code duplication
+
+**Code Quality Improvements:**
+- ✅ Enhanced `graph.py` router with consistent patterns
+  - Added logger integration for all endpoints
+  - Implemented try-except-finally error handling
+  - Added FastAPI Query parameter validation with constraints
+  - Standardized response format with `count` field
+  
+- ✅ Refactored `main.py`
+  - Removed duplicate endpoint definitions
+  - Cleaned up imports (removed unused RiskScoreEngine, GraphAnalytics)
+  - Centralized router registration
+  - Added section comments for organization
+
+**Error Handling & Logging:**
+- ✅ All endpoints now include proper exception logging
+- ✅ HTTPException with descriptive error messages
+- ✅ Resource cleanup with finally blocks
+- ✅ Input validation with Query constraints
+
+**Documentation:**
+- ✅ Updated PROJECT_CONTEXT.md with current API structure
+- ✅ Documented design patterns and standards
+- ✅ Added endpoint specifications and features
+
+#### 📋 Active Development Areas
+
+- **Chat/RAG Integration:** `/chat/query` endpoint (planned)
+- **Document Upload:** `/documents/upload` endpoint (planned)
+- **Dashboard Backend:** Streamlit integration (in progress)
+
+#### 🔄 Architecture Components Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Graph Router | ✅ Complete | Refactored, tested patterns |
+| Analytics Router | ✅ Complete | Full implementation |
+| Health Endpoints | ✅ Complete | Basic setup done |
+| Error Handling | ✅ Complete | Consistent across all routes |
+| Logging | ✅ Complete | Integrated everywhere |
+| Parameter Validation | ✅ Complete | Query constraints applied |
+| Database Connections | ✅ Complete | Proper cleanup in finally blocks |
+| Documentation | ✅ Updated | This file |
+
+
+
+
+
+
+
