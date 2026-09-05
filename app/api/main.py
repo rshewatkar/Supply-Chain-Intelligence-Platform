@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes.graph import router as graph_router
 from app.api.routes.analytics import router as analytics_router
+from app.api.routes.chat import router as chat_router
 
 app = FastAPI(
     title="Supply Chain Intelligence Platform API",
@@ -17,6 +18,7 @@ app = FastAPI(
 
 app.include_router(graph_router)
 app.include_router(analytics_router)
+app.include_router(chat_router)
 
 
 # =========================================================
