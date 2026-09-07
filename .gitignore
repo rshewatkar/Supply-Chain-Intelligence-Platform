@@ -41,3 +41,9 @@ qdrant_storage/
 
 #command file
 notepad.txt
+
+# API Testing Reports (auto-generated)
+API_TESTING_REPORT.md
+CHAT_ROUTER_SUMMARY.md
+IMPLEMENTATION_COMPLETE.txt
+IMPLEMENTATION_SUMMARY.md
