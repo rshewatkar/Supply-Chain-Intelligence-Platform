@@ -6,13 +6,15 @@ from pathlib import Path
 def main():
     """
     Launch the Supply Chain Intelligence Streamlit dashboard.
+
+    Uses the new modular entry point: app/dashboard/app.py
     """
 
     dashboard_path = (
         Path(__file__).resolve().parent.parent
         / "app"
         / "dashboard"
-        / "graph_dashboard.py"
+        / "app.py"
     )
 
     if not dashboard_path.exists():
@@ -24,7 +26,7 @@ def main():
 
     print("=" * 60)
     print("Supply Chain Intelligence Platform")
-    print("Graph Analytics Dashboard")
+    print("Dashboard")
     print("=" * 60)
 
     subprocess.run(
