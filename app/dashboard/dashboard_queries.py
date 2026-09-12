@@ -415,6 +415,74 @@ class DashboardQueries:
         )
 
     # =====================================================
+    # Suppliers for a Company
+    # =====================================================
+
+    def get_suppliers(self, company_name, limit=20):
+        """
+        Return suppliers for a given company.
+        
+        Queries for SUPPLIED_BY relationships where the company is the target.
+        """
+        
+        query = """
+        MATCH (company:Entity {name: $company_name})
+        MATCH (supplier:Entity)-[r:SUPPLIED_BY]->(company)
+        
+        RETURN
+            supplier.name AS supplier,
+            supplier.entity_type AS supplier_type,
+            coalesce(r.occurrence_count, 1) AS total_occurrence_count
+        
+        ORDER BY total_occurrence_count DESC
+        
+        LIMIT $limit
+        """
+        
+        return self.neo4j.execute_query(
+            query,
+            {
+                "company_name": company_name,
+                "limit": limit,
+            },
+        )
+
+    # =====================================================
+    # Common Suppliers Between Two Companies
+    # =====================================================
+
+    def get_common_suppliers(self, company1, company2, limit=10):
+        """
+        Return common suppliers shared by two companies.
+        
+        Finds suppliers that supply to both company1 and company2.
+        """
+        
+        query = """
+        MATCH (supplier:Entity)-[r1:SUPPLIED_BY]->(c1:Entity {name: $company1})
+        MATCH (supplier)-[r2:SUPPLIED_BY]->(c2:Entity {name: $company2})
+        
+        RETURN
+            supplier.name AS supplier,
+            supplier.entity_type AS supplier_type,
+            coalesce(r1.occurrence_count, 1) + coalesce(r2.occurrence_count, 1) AS total_occurrence_count
+        
+        ORDER BY total_occurrence_count DESC
+        
+        LIMIT $limit
+        """
+        
+        return self.neo4j.execute_query(
+            query,
+            {
+                "company1": company1,
+                "company2": company2,
+                "limit": limit,
+            },
+        )
+
+
+    # =====================================================
     # Close Connection
     # =====================================================
 
