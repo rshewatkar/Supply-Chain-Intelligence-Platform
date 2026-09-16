@@ -351,6 +351,42 @@ streamlit run app/dashboard/graph_dashboard.py
 
 ## Project Status & Changelog
 
+### Last Updated: September 16, 2026
+
+#### ✅ Dashboard Expansion & Infrastructure Fix (September 16, 2026)
+
+**Status:** ✅ COMPLETED
+
+**Files Created/Modified:**
+- ✅ pp/dashboard/pages/graph.py - Refactored completely for better UX, entity exploration, and query limits.
+- ✅ pp/dashboard/pages/risk.py - Fully implemented from placeholder status (264 lines).
+- ✅ .venv/ - Destroyed broken environment and rebuilt a clean, working virtual environment.
+
+**Features Implemented:**
+
+1. **Risk Analytics Page (
+isk.py)** - Brand new implementation:
+   - Configurable limits via sidebar controls (	op_n).
+   - Top-level 5-column **KPI Overview** (Total Entities, Avg/Max Risk, Critical/High sums).
+   - Side-by-side **Risk Distribution Charts** using Streamlit st.bar_chart().
+   - Comprehensive multi-tab architecture separating DataTables for:
+     - 🚨 Highest Risk Entities
+     - 🔗 Dependency Risks (Supplier, Country, Tier-1/Tier-2)
+     - 🕸️ Centrality Risks (Degree, Betweenness, Closeness)
+
+2. **Graph Analytics Refactoring (graph.py)**:
+   - Replaced static limits with sidebar controllers.
+   - Refactored layout to use consistent standard columns and typography patterns.
+   - Restored missing 
+ender_relationship_distribution components.
+   - Fully integrated 
+ender_entity_explorer and raw tabular data functions from backend. 
+
+3. **Development Environment Infrastructure**:
+   - Diagnosed and repaired a corrupted .venv resulting from an interrupted local environment build and file locks.
+   - Restored missing activation scripts and pip installers.
+
+
 ### Last Updated: September 8, 2026
 
 #### ✅ Completed Tasks (September 8, 2026)
@@ -534,7 +570,7 @@ streamlit run app/dashboard/graph_dashboard.py
 3. Fix existing test issues:
    - Resolve `test_chat_assistant.py` routing bug (1 failing)
    - Fix or mock `test_embeddings.py` timeout (1 hanging)
-4. Integrate companies page into Streamlit app
+4. ✅ ~~Integrate companies page into Streamlit app~~ **COMPLETED (Sept 16, 2026)**
 5. Implement `/chat/query` endpoint with RAG pipeline (enhancement)
 6. Implement `/documents/upload` endpoint (planned)
 7. Add performance/load testing
