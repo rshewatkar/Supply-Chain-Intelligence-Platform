@@ -1,0 +1,1 @@
+# Supply Chain Intelligence Platform - Dashboard package\n# This package contains the dashboard modules for the Supply Chain Intelligence Platform
